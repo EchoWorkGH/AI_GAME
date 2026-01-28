@@ -1,0 +1,30 @@
+path: D:\djj\gamecv\data # 数据集根目录绝对路径
+train: images/train
+val: images/val
+names:
+  0: npc_dianxiaoer                # 店小二
+  1: npc_jiudian_laoban            # 酒店老闆
+#info_user
+#info_pet
+#b_system
+#b_attack
+#b_give
+#b_property
+#b_colose_menu
+#b_magic
+#b_team
+#b_open
+#npc_dianxiaoer
+#npc_jiudian_laoban
+#npc_datu_zeiwang
+#npc_datu_qiangdao
+#map_changan
+#map_jianye
+#map_nverchun
+#map_aolaiguo
+#w_q_hong
+#w_q_huang
+#w_q_zi
+#w_q_bai
+#w_q_huang
+#w_q_

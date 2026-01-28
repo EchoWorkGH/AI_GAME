@@ -4,6 +4,6 @@ if __name__ == '__main__':
     model = YOLO("yolov8n.pt")
     # 训练模型
     results = model.train(data="wheat.yaml",
-                          epochs=100,
+                          epochs=30,
                           imgsz=640,
                           device="cpu")

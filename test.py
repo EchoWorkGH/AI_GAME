@@ -1,7 +1,7 @@
 from ultralytics import YOLO
 
 # 1. 加载你训练好的模型 (注意路径，通常在 weights/best.pt)
-model = YOLO(r"D:\djj\gamecv\runs\detect\train8\weights\best.pt")
+model = YOLO(r"D:\djj\gamecv\runs\detect\train2\weights\best.pt")
 
 # 2. 对单张图片进行预测
 results = model.predict(source=r"D:\djj\gamecv\data\test", save=True, conf=0.5)

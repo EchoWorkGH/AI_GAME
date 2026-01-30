@@ -1,8 +1,8 @@
-path: D:\djj\gamecv\data # 数据集根目录绝对路径
+path: D:\djj\train_s # 数据集根目录绝对路径
 train:
-  - images/train/dianxiaoer    # 文件夹 1
+  - dianxiaoer_just_name\train\images    # 文件夹 1
 val:
-  - images/val/dianxiaoer    # 文件夹 1
+  - dianxiaoer_just_name\val\images
 names:
   0: npc_dianxiaoer                # 店小二
   1: npc_jiudian_laoban            # 酒店老闆

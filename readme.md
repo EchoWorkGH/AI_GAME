@@ -4,8 +4,23 @@
 pip install torch torchvision torchaudio
 目前沒有GPU 所以支持GPU的先不用
 
+標註用 labelimg 但是經常崩潰  
+現在換x-anylabeling  
+pip install x-anylabeling -i https://pypi.tuna.tsinghua.edu.cn/simple
+pip install importlib-metadata -i https://pypi.tuna.tsinghua.edu.cn/simple
 
+https://github.com/CVHub520/X-AnyLabeling/blob/main/docs/en/get_started.md
 
+# CPU [Windows/Linux/macOS]
+pip install x-anylabeling-cvhub[cpu]
+
+# CUDA 12.x is the default GPU option [Windows/Linux]
+pip install x-anylabeling-cvhub[gpu]
+
+# CUDA 11.x [Windows/Linux]
+pip install x-anylabeling-cvhub[gpu-cu11]
+
+xanylabeling
 
 ## 后续直接只用yolo来搞
 
@@ -75,15 +90,15 @@ names:
 
 训练成果
 
-| 字段名称 | 含义 | 说明 |
-| :--- | :--- | :--- |
-| **Class** | 类别 | `all` 表示所有类别的平均值，或者显示具体的类别名称。 |
-| **Images** | 图片总数 | 验证集中用于测试的图片数量。 |
-| **Instances** | 标注总数 | 验证集中所有物体标签的总个数。 |
-| **Box(P)** | 精确率 (Precision) | 模型找出的物体中，真正正确的比例（查准率）。 |
-| **R** | 召回率 (Recall) | 所有真实物体中，被模型成功找出的比例（查全率）。 |
-| **mAP50** | 平均精度 (IoU=0.5) | 在交并比阈值为 0.5 时的平均精度，是衡量模型性能的核心指标。 |
-| **mAP50-95** | 综合平均精度 | 在不同 IoU 阈值（0.5 到 0.95）下的平均精度，数值越高代表模型越稳健。 |
+| 字段名称 | 含义 | 说明                                                    |
+| :--- | :--- |:------------------------------------------------------|
+| **Class** | 类别 | `all` 表示所有类别的平均值，或者显示具体的类别名称。                         |
+| **Images** | 图片总数 | 验证集中用于测试的图片数量。                                        |
+| **Instances** | 标注总数 | 验证集中所有物体标签的总个数。                                       |
+| **Box(P)** | 精确率 (Precision) | 模型找出的物体中，真正正确的比例（查准率）。                                |
+| **R** | 召回率 (Recall) | 所有真实物体中，被模型成功找出的比例（查全率）。                              |
+| **mAP50** | 平均精度 (IoU=0.5) | 在交并比阈值为 0.5 时的平均精度，是衡量模型性能的核心指标。                      |
+| **mAP50-95** | 综合平均精度 | 在不同 IoU 阈值（0.5 到 0.95）下的平均精度，数值越高代表模型越稳健。 0.6-0.7就是很好 |
 
 
 训练输出

@@ -1,65 +1,149 @@
-# This is a sample Python script.
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-import torch
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+import tkinter as tk
+from tkinter import ttk, scrolledtext
+import threading
+from PIL import ImageTk
+from yolo_worker import YOLOClickerWorker
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print(torch.__version__)  # 查看 PyTorch 版本
-    print(torch.cuda.is_available())  # 检查 GPU 是否可用
+class AppUI:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("YOLO 模块化执行器 v3.1")
+        self.root.geometry("520x850")
 
-    # x = torch.randn(3, requires_grad=True)
-    x = torch.tensor([1, 1, 1], dtype=torch.float, requires_grad=True)
-    y = x * 2
-    v = torch.tensor([10, 10, 1], dtype=torch.float)
-    y.backward(v)
-    print(x.grad)
+        self.worker = YOLOClickerWorker()
+        self.region = None
 
-    # # 创建需要梯度的张量
-    # x = torch.tensor(2.0, requires_grad=True)
-    #
-    # # 定义计算图
-    # y = x ** 2
-    #
-    # # 计算梯度
-    # y.backward()
-    #
-    # # 查看梯度
-    # print(x.grad)
+        self.setup_ui()
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
-import torch.nn as nn
-import torch.nn.functional as F
+    def setup_ui(self):
+        # --- 1. 区域管理组 ---
+        area_frame = ttk.LabelFrame(self.root, text="区域管理")
+        area_frame.pack(pady=10, fill="x", padx=20)
+
+        ttk.Button(area_frame, text="选择/重选区域", command=self.select_area).pack(side="left", padx=10, pady=10,
+                                                                                    expand=True)
+        # 恢复显现区域按钮
+        self.btn_show_area = ttk.Button(area_frame, text="显现当前区域", command=self.flash_area, state="disabled")
+        self.btn_show_area.pack(side="left", padx=10, pady=10, expand=True)
+
+        # --- 2. 预览区域 (固定大小，不会变小) ---
+        preview_container = ttk.LabelFrame(self.root, text="实时预览 (AI 画面)")
+        preview_container.pack(pady=5, padx=20)
+
+        # 使用 Frame 锁定 400x300 分辨率
+        self.view_port = tk.Frame(preview_container, width=400, height=300, bg="black")
+        self.view_port.pack_propagate(False)  # 关键：防止被子组件撑开或收缩
+        self.view_port.pack()
+
+        self.preview_label = tk.Label(self.view_port, bg="black")
+        self.preview_label.pack(expand=True, fill="both")
+
+        # --- 3. 配置与开关 ---
+        settings = ttk.LabelFrame(self.root, text="运行配置")
+        settings.pack(pady=10, padx=20, fill="x")
+
+        tk.Label(settings, text="目标名称:").grid(row=0, column=0, padx=5, pady=5)
+        self.target_entry = ttk.Entry(settings)
+        self.target_entry.insert(0, "npc_dianxiaoer")
+        self.target_entry.grid(row=0, column=1, sticky="ew")
+
+        self.btn_toggle = ttk.Button(self.root, text="开启自动执行", command=self.toggle_engine, state="disabled")
+        self.btn_toggle.pack(pady=10, fill="x", padx=40)
+
+        # --- 4. 日志区 ---
+        tk.Label(self.root, text="运行日志:").pack(anchor="w", padx=20)
+        self.log_box = scrolledtext.ScrolledText(self.root, height=12, font=("Consolas", 9))
+        self.log_box.pack(pady=5, padx=20, fill="both", expand=True)
+
+    def flash_area(self):
+        """恢复：在屏幕上高亮显示当前识别框"""
+        if not self.region: return
+        flash_win = tk.Toplevel(self.root)
+        flash_win.attributes("-alpha", 0.5, "-fullscreen", True, "-topmost", True, "-transparentcolor", "white")
+        flash_win.overrideredirect(True)
+        canvas = tk.Canvas(flash_win, bg="white", highlightthickness=0)
+        canvas.pack(fill="both", expand=True)
+        x, y, w, h = self.region
+        canvas.create_rectangle(x, y, x + w, y + h, outline="red", width=3)
+        self.root.after(1500, flash_win.destroy)
+
+    def select_area(self):
+        if self.worker.is_running:
+            self.toggle_engine()
+        self.root.iconify()
+        AreaSelector(tk.Toplevel(self.root), self.on_area_done)
+
+    def on_area_done(self, selection):
+        self.region = selection
+        self.root.deiconify()
+        if self.region:
+            self.btn_toggle.config(state="normal")
+            self.btn_show_area.config(state="normal")
+            self.write_log(f"区域已就绪: {self.region}")
+
+    def toggle_engine(self):
+        if not self.worker.is_running:
+            self.btn_toggle.config(text="停止运行")
+            self.btn_show_area.config(state="disabled")
+            t = threading.Thread(target=self.worker.start_process, args=(
+                self.region,
+                self.target_entry.get(),
+                100, 0.5,
+                self.write_log, self.update_preview
+            ), daemon=True)
+            t.start()
+        else:
+            self.worker.stop()
+            self.btn_toggle.config(text="开启自动执行")
+            self.btn_show_area.config(state="normal")
+
+    def write_log(self, msg):
+        self.root.after(0,
+                        lambda: [self.log_box.insert(tk.END, f"[{self.get_time()}] {msg}\n"), self.log_box.see(tk.END)])
+
+    def get_time(self):
+        import time
+        return time.strftime("%H:%M:%S")
+
+    def update_preview(self, pil_img):
+        # 缩放逻辑：始终填充 400x300 的空间
+        pil_img.thumbnail((400, 300))
+        tk_img = ImageTk.PhotoImage(pil_img)
+        self.root.after(0, self._set_img, tk_img)
+
+    def _set_img(self, tk_img):
+        self.preview_label.config(image=tk_img)
+        self.preview_label.image = tk_img
 
 
-class Net(nn.Module):
-    def __init__(self):
-        super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(3, 6, 5)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+# AreaSelector 保持不变...
+class AreaSelector:
+    def __init__(self, window, callback):
+        self.window = window
+        self.callback = callback
+        self.window.attributes('-alpha', 0.3, '-fullscreen', True, "-topmost", True)
+        self.canvas = tk.Canvas(self.window, cursor="cross", bg="grey")
+        self.canvas.pack(fill="both", expand=True)
+        self.start_x = self.start_y = self.rect = None
+        self.canvas.bind("<ButtonPress-1>", self.on_press)
+        self.canvas.bind("<B1-Motion>", self.on_move)
+        self.canvas.bind("<ButtonRelease-1>", self.on_release)
 
-    def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = x.view(-1, 16 * 5 * 5)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
+    def on_press(self, e):
+        self.start_x, self.start_y = e.x, e.y
+        self.rect = self.canvas.create_rectangle(e.x, e.y, e.x + 1, e.y + 1, outline='red', width=2)
+
+    def on_move(self, e):
+        self.canvas.coords(self.rect, self.start_x, self.start_y, e.x, e.y)
+
+    def on_release(self, e):
+        selection = (min(self.start_x, e.x), min(self.start_y, e.y), abs(self.start_x - e.x), abs(self.start_y - e.y))
+        self.callback(selection)
+        self.window.destroy()
 
 
-
-
-
-net = Net()
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = AppUI(root)
+    root.mainloop()

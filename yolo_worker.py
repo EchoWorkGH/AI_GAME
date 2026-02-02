@@ -2,7 +2,12 @@ import time
 import pyautogui
 from mss import mss
 from PIL import Image
+
 from ultralytics import YOLO
+
+# 提高响应速度
+pyautogui.PAUSE = 0.01
+pyautogui.FAILSAFE = True  # 鼠标移动到屏幕四个角可紧急停止
 
 
 class YOLOClickerWorker:
@@ -12,52 +17,52 @@ class YOLOClickerWorker:
         self.last_click_time = 0
 
     def start_process(self, region, target_class, interval_ms, cooldown, log_callback, preview_callback):
-        """
-        核心运行循环
-        region: (L, T, W, H)
-        log_callback: 用于向 UI 发送日志的函数
-        preview_callback: 用于向 UI 发送识别图的函数
-        """
         self.is_running = True
+        # 选区左上角坐标 (L, T)
         L, T = int(region[0]), int(region[1])
         monitor = {"left": L, "top": T, "width": int(region[2]), "height": int(region[3])}
 
+        log_callback(f"任务启动：模式 [双击激活] | 目标 [{target_class}]")
+
         with mss() as sct:
             while self.is_running:
-                start_time = time.time()
+                loop_start = time.time()
                 try:
-                    # 1. 抓图
+                    # 1. 抓取选区
                     sct_img = sct.grab(monitor)
                     img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
 
-                    # 2. 推理
+                    # 2. YOLO 推理
                     results = self.model.predict(img, conf=0.5, verbose=False)
 
-                    # 3. 逻辑处理
+                    # 3. 逻辑判定
+                    current_time = time.time()
                     for box in results[0].boxes:
                         label = self.model.names[int(box.cls[0])]
                         if label == target_class:
-                            coords = box.xyxy[0].cpu().numpy()
-                            # 坐标转换：相对 -> 绝对
-                            screen_x = L + (coords[0] + coords[2]) / 2
-                            screen_y = T + (coords[1] + coords[3]) / 2
+                            # 冷却检查
+                            if current_time - self.last_click_time > cooldown:
+                                # 计算绝对屏幕坐标
+                                coords = box.xyxy[0].cpu().numpy()
+                                target_x = L + (coords[0] + coords[2]) / 2
+                                target_y = T + (coords[1] + coords[3]) / 2
 
-                            # 点击动作
-                            if time.time() - self.last_click_time > cooldown:
-                                pyautogui.click(screen_x, screen_y)
-                                self.last_click_time = time.time()
-                                log_callback(f"点击 {target_class}: ({int(screen_x)}, {int(screen_y)})")
+                                # 执行两次点击：1下激活窗口，1下触发功能
+                                pyautogui.click(target_x, target_y, clicks=2, interval=0.05)
+
+                                self.last_click_time = current_time
+                                log_callback(f"检测到目标，执行双击激活: ({int(target_x)}, {int(target_y)})")
 
                     # 4. 预览回调
                     res_plotted = results[0].plot()
                     preview_callback(Image.fromarray(res_plotted[..., ::-1]))
 
                 except Exception as e:
-                    log_callback(f"后台异常: {e}")
+                    log_callback(f"Worker异常: {e}")
                     break
 
-                # 动态频率控制
-                elapsed = (time.time() - start_time) * 1000
+                # 频率控制
+                elapsed = (time.time() - loop_start) * 1000
                 time.sleep(max(1, interval_ms - elapsed) / 1000.0)
 
     def stop(self):

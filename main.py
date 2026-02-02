@@ -15,13 +15,6 @@ class AppUI:
         self.worker = YOLOClickerWorker()
         self.region = None
         self.setup_ui()
-        # 需要在setup_ui之后调用，因为instruction_label在setup_ui中创建
-        self.root.after(100, self.setup_worker)
-
-    def setup_worker(self):
-        """设置worker的指令显示标签"""
-        if hasattr(self, 'instruction_label'):
-            self.worker.set_instruction_label(self.instruction_label)
 
     def on_mode_change(self):
         """模式切换回调函数"""
@@ -71,19 +64,12 @@ class AppUI:
         tk.Radiobutton(mode_frame, text="显示指令", variable=self.click_mode_var, 
                        value="instruction", command=self.on_mode_change).pack(side="left", padx=5)
 
-        # 4. 指令显示区域
-        instruction_frame = ttk.LabelFrame(self.root, text="点击指令显示")
-        instruction_frame.pack(pady=5, padx=20, fill="x")
-        self.instruction_label = tk.Label(instruction_frame, text="", font=("Consolas", 12), 
-                                         bg="yellow", fg="red", height=2)
-        self.instruction_label.pack(fill="x", padx=10, pady=5)
-
-        # 5. 开关
+        # 4. 开关
         self.btn_toggle = ttk.Button(self.root, text="开启自动执行 (双击唤醒模式)", command=self.toggle_engine,
                                      state="disabled")
         self.btn_toggle.pack(pady=15, fill="x", padx=40)
 
-        # 6. 日志
+        # 5. 日志
         tk.Label(self.root, text="日志信息:").pack(anchor="w", padx=20)
         self.log_box = scrolledtext.ScrolledText(self.root, height=12, font=("Consolas", 9), bg="#f4f4f4")
         self.log_box.pack(pady=5, padx=20, fill="both", expand=True)

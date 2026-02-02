@@ -3,6 +3,7 @@ import pyautogui
 from mss import mss
 from PIL import Image
 import tkinter as tk
+import threading
 
 from ultralytics import YOLO
 
@@ -17,23 +18,61 @@ class YOLOClickerWorker:
         self.is_running = False
         self.last_click_time = 0
         self.real_click_mode = True  # True: 真实点击, False: 显示指令
-        self.instruction_label = None
+        self.marker_window = None
 
     def set_click_mode(self, real_click=True):
         """设置点击模式"""
         self.real_click_mode = real_click
 
-    def set_instruction_label(self, label):
-        """设置用于显示指令的Label组件"""
-        self.instruction_label = label
-
     def show_click_instruction(self, x, y):
-        """在屏幕上显示点击指令"""
-        if self.instruction_label:
-            instruction_text = f"点击指令: ({int(x)}, {int(y)})"
-            self.instruction_label.config(text=instruction_text)
-            # 3秒后清除指令显示
-            self.instruction_label.after(3000, lambda: self.instruction_label.config(text=""))
+        """在屏幕上显示红圈标记"""
+        try:
+            # 如果已有标记窗口，先销毁
+            if self.marker_window:
+                try:
+                    self.marker_window.destroy()
+                except:
+                    pass
+                self.marker_window = None
+
+            # 创建标记窗口
+            self.marker_window = tk.Toplevel()
+            self.marker_window.attributes("-alpha", 0.8, "-topmost", True, "-transparentcolor", "white")
+            self.marker_window.overrideredirect(True)
+            
+            # 设置窗口位置和大小（红圈直径60像素）
+            circle_size = 60
+            self.marker_window.geometry(f"{circle_size}x{circle_size}+{int(x-circle_size//2)}+{int(y-circle_size//2)}")
+            
+            # 创建画布并绘制红圈
+            canvas = tk.Canvas(self.marker_window, bg="white", highlightthickness=0, width=circle_size, height=circle_size)
+            canvas.pack(fill="both", expand=True)
+            
+            # 绘制红圈（圆心在窗口中心）
+            center = circle_size // 2
+            radius = circle_size // 2 - 2
+            canvas.create_oval(2, 2, circle_size-2, circle_size-2, outline="red", width=3)
+            
+            # 2秒后自动清除标记
+            def clear_marker():
+                try:
+                    if self.marker_window:
+                        self.marker_window.destroy()
+                        self.marker_window = None
+                except:
+                    pass
+            
+            self.marker_window.after(2000, clear_marker)
+            
+        except Exception as e:
+            print(f"显示标记时出错: {e}")
+            # 确保出错时清理窗口
+            try:
+                if self.marker_window:
+                    self.marker_window.destroy()
+                    self.marker_window = None
+            except:
+                pass
 
     def start_process(self, region, target_class, interval_ms, cooldown, log_callback, preview_callback):
         self.is_running = True

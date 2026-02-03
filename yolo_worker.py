@@ -4,6 +4,7 @@ from mss import mss
 from PIL import Image
 import tkinter as tk
 import threading
+import random
 
 from ultralytics import YOLO
 
@@ -23,6 +24,30 @@ class YOLOClickerWorker:
     def set_click_mode(self, real_click=True):
         """设置点击模式"""
         self.real_click_mode = real_click
+
+    def get_randomized_position(self, center_x, center_y, box_width, box_height):
+        """获取目标框内的随机位置
+        
+        Args:
+            center_x, center_y: 目标框中心坐标
+            box_width, box_height: 目标框的宽度和高度
+            
+        Returns:
+            随机偏移后的坐标 (x, y)
+        """
+        # 设置随机偏移范围为框大小的10%-30%
+        max_offset_x = min(box_width * 0.3, 20)  # 最大偏移20像素或框宽的30%
+        max_offset_y = min(box_height * 0.3, 20)  # 最大偏移20像素或框高的30%
+        
+        # 生成随机偏移量
+        offset_x = random.uniform(-max_offset_x, max_offset_x)
+        offset_y = random.uniform(-max_offset_y, max_offset_y)
+        
+        # 计算最终坐标
+        final_x = center_x + offset_x
+        final_y = center_y + offset_y
+        
+        return final_x, final_y
 
     def show_click_instruction(self, x, y):
         """在屏幕上显示红圈标记"""
@@ -103,8 +128,13 @@ class YOLOClickerWorker:
                             if current_time - self.last_click_time > cooldown:
                                 # 计算绝对屏幕坐标
                                 coords = box.xyxy[0].cpu().numpy()
-                                target_x = L + (coords[0] + coords[2]) / 2
-                                target_y = T + (coords[1] + coords[3]) / 2
+                                box_center_x = L + (coords[0] + coords[2]) / 2
+                                box_center_y = T + (coords[1] + coords[3]) / 2
+                                box_width = coords[2] - coords[0]
+                                box_height = coords[3] - coords[1]
+                                
+                                # 获取随机化后的点击位置
+                                target_x, target_y = self.get_randomized_position(box_center_x, box_center_y, box_width, box_height)
 
                                 if self.real_click_mode:
                                     # 执行两次点击：1下激活窗口，1下触发功能

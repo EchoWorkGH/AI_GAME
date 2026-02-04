@@ -5,19 +5,28 @@ import time
 from PIL import Image, ImageTk
 from yolo_worker import YOLOClickerWorker
 
+import tkinter as tk
+from tkinter import ttk, scrolledtext
+import threading
+import time
+from PIL import Image, ImageTk, ImageGrab
+import pygetwindow as gw  # 需安装 pip install pygetwindow
+import numpy as np
+from yolo_worker import YOLOClickerWorker
+
 
 class AppUI:
     def __init__(self, root):
         self.root = root
         self.root.title("YOLO 物理模拟自动点击器 v4.0")
-        self.root.geometry("500x850")
+        self.root.geometry("550x900")
 
         self.worker = YOLOClickerWorker()
         self.region = None
+        self.target_window = None
         self.setup_ui()
 
     def on_mode_change(self):
-        """模式切换回调函数"""
         if self.click_mode_var.get() == "real":
             self.worker.set_click_mode(True)
         else:
@@ -27,13 +36,22 @@ class AppUI:
         # 1. 区域管理
         area_frame = ttk.LabelFrame(self.root, text="第一步：区域设定")
         area_frame.pack(pady=10, fill="x", padx=20)
-        ttk.Button(area_frame, text="框选识别区域", command=self.select_area).pack(side="left", padx=10, pady=10,
-                                                                                   expand=True)
-        self.btn_show_area = ttk.Button(area_frame, text="显现当前区域", command=self.flash_area, state="disabled")
-        self.btn_show_area.pack(side="left", padx=10, pady=10, expand=True)
 
-        # 2. 预览区域 (固定大小)
-        preview_container = ttk.LabelFrame(self.root, text="实时预览 (固定画面)")
+        btn_container = tk.Frame(area_frame)
+        btn_container.pack(fill="x", padx=10, pady=5)
+
+        ttk.Button(btn_container, text="框选识别区域", command=self.select_area).pack(side="left", padx=5, expand=True,
+                                                                                      fill="x")
+
+        self.btn_lock_win = ttk.Button(btn_container, text="锁定对应窗口", command=self.lock_target_window,
+                                       state="disabled")
+        self.btn_lock_win.pack(side="left", padx=5, expand=True, fill="x")
+
+        self.btn_show_area = ttk.Button(area_frame, text="显现当前区域", command=self.flash_area, state="disabled")
+        self.btn_show_area.pack(fill="x", padx=15, pady=5)
+
+        # 2. 预览区域
+        preview_container = ttk.LabelFrame(self.root, text="实时预览 (当前识别范围)")
         preview_container.pack(pady=5, padx=20)
         self.view_port = tk.Frame(preview_container, width=400, height=300, bg="black")
         self.view_port.pack_propagate(False)
@@ -59,9 +77,9 @@ class AppUI:
         mode_frame = tk.Frame(settings)
         mode_frame.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
         self.click_mode_var = tk.StringVar(value="real")
-        tk.Radiobutton(mode_frame, text="真实点击", variable=self.click_mode_var, 
+        tk.Radiobutton(mode_frame, text="真实点击", variable=self.click_mode_var,
                        value="real", command=self.on_mode_change).pack(side="left", padx=5)
-        tk.Radiobutton(mode_frame, text="显示指令", variable=self.click_mode_var, 
+        tk.Radiobutton(mode_frame, text="显示指令", variable=self.click_mode_var,
                        value="instruction", command=self.on_mode_change).pack(side="left", padx=5)
 
         # 4. 开关
@@ -74,11 +92,60 @@ class AppUI:
         self.log_box = scrolledtext.ScrolledText(self.root, height=12, font=("Consolas", 9), bg="#f4f4f4")
         self.log_box.pack(pady=5, padx=20, fill="both", expand=True)
 
+    def lock_target_window(self):
+        """寻找并锁定窗口，同时将识别/预览区域切换为该窗口范围"""
+        if not self.region:
+            self.write_log("请先框选一个区域再尝试锁定窗口")
+            return
+
+        rx, ry, rw, rh = self.region
+        rx2, ry2 = rx + rw, ry + rh
+        best_win = None
+        max_overlap = 0
+
+        for win in gw.getAllWindows():
+            if win.width <= 0 or win.height <= 0: continue
+            overlap_x1 = max(rx, win.left)
+            overlap_y1 = max(ry, win.top)
+            overlap_x2 = min(rx2, win.right)
+            overlap_y2 = min(ry2, win.bottom)
+
+            if overlap_x2 > overlap_x1 and overlap_y2 > overlap_y1:
+                area = (overlap_x2 - overlap_x1) * (overlap_y2 - overlap_y1)
+                if area > max_overlap:
+                    max_overlap = area
+                    best_win = win
+
+        if best_win:
+            self.target_window = best_win
+            # 重要：将识别区域(self.region)更新为锁定窗口的实际物理范围
+            self.region = (best_win.left, best_win.top, best_win.width, best_win.height)
+
+            self.write_log(f"成功锁定窗口: [{best_win.title}]")
+            self.write_log(f"预览区域已调整为窗口全量范围")
+
+            # 如果 worker 正在运行，实时更新抓取范围
+            if self.worker.is_running:
+                self.worker.update_region(self.region)
+
+            # 立即触发一次预览更新，让用户看到窗口画面
+            self._force_refresh_preview()
+        else:
+            self.write_log("未能在该区域发现有效窗口，请重试")
+
+    def _force_refresh_preview(self):
+        """手动截取一次当前区域并更新到预览"""
+        if self.region:
+            x, y, w, h = self.region
+            img = ImageGrab.grab(bbox=(x, y, x + w, y + h))
+            self.update_preview(img)
+
     def write_log(self, msg):
         self.root.after(0, lambda: [self.log_box.insert(tk.END, f"[{time.strftime('%H:%M:%S')}] {msg}\n"),
                                     self.log_box.see(tk.END)])
 
     def update_preview(self, pil_img):
+        # 保持比例缩放以适应 400x300 的预览框
         pil_img.thumbnail((400, 300))
         tk_img = ImageTk.PhotoImage(pil_img)
         self.root.after(0, self._set_img, tk_img)
@@ -109,19 +176,26 @@ class AppUI:
         if self.region:
             self.btn_toggle.config(state="normal")
             self.btn_show_area.config(state="normal")
+            self.btn_lock_win.config(state="normal")
+            # 框选完立即展示一下预览图
+            self._force_refresh_preview()
 
     def toggle_engine(self):
         if not self.worker.is_running:
             self.btn_toggle.config(text="停止运行")
+            # 这里的 self.region 已经是被 lock_target_window 更新过的窗口坐标
             t = threading.Thread(target=self.worker.start_process, args=(
                 self.region, self.target_entry.get(),
-                self.interval_scale.get(), 1.0,  # 1.0 为点击冷却(秒)
+                self.interval_scale.get(), 1.0,
                 self.write_log, self.update_preview
             ), daemon=True)
             t.start()
         else:
             self.worker.stop()
             self.btn_toggle.config(text="开启自动执行 (双击唤醒模式)")
+
+
+# ... AreaSelector 类保持不变 ...
 
 
 class AreaSelector:

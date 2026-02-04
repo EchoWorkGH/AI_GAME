@@ -1,3 +1,4 @@
+import os
 
 import paddle
 import paddleocr
@@ -6,10 +7,16 @@ from paddleocr import PaddleOCR
 print("PaddlePaddle 版本:", paddle.__version__)
 print("PaddleOCR 版本:", paddleocr.__version__)
 
+
 # img_path = r'D:\djj\gamecv\runs\detect\predict2\Screenshot_2026-01-28-14-37-51-09_97622d0c52f3ce6e6d31938c263a39ee.jpg'
-img_path = r'D:\djj\gamecv\runs\detect\predict\Screenshot_2026-01-28-14-36-26-51_97622d0c52f3ce6e6d31938c263a39ee.jpg'
+# img_path = r'D:\djj\gamecv\runs\detect\predict\Screenshot_2026-01-28-14-36-26-51_97622d0c52f3ce6e6d31938c263a39ee.jpg'
+# img_path = r'D:\djj\train_s\dianxiaoer\train\imagesScreenshot_2026-01-27-16-10-52-79_97622d0c52f3ce6e6d31938c263a39ee.jpg'
 # img_path = r'D:\djj\gamecv\data\test\.trashed-1772172492-Screenshot_2026-01-28-11-10-21-98_97622d0c52f3ce6e6d31938c263a39ee.jpg'
 
+folder = r"D:\djj\train_s\dianxiaoer\train\images"
+filename = "Screenshot_2026-01-27-16-10-52-79_97622d0c52f3ce6e6d31938c263a39ee.jpg"
+
+img_path = os.path.join(folder, filename)
 
 
 # 初始化 OCR 引擎（默认自动下载中英文模型）

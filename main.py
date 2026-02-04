@@ -127,7 +127,8 @@ class AppUI:
             # 如果 worker 正在运行，实时更新抓取范围
             if self.worker.is_running:
                 self.worker.update_region(self.region)
-
+            self.worker.bind_window(best_win._hWnd)
+            self.write_log(f"已锁定句柄: {best_win._hWnd} ({best_win.title})")
             # 立即触发一次预览更新，让用户看到窗口画面
             self._force_refresh_preview()
         else:

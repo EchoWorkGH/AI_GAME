@@ -1,39 +1,41 @@
 path: D:\djj\train_s # 数据集根目录绝对路径
 train:
-  - HPMPtest\train\images    # 文件夹 1
+  - 002HPtest\train\images    # 文件夹 1
 val:
-  - HPMPtest\val\images
+  - 002HPtest\val\images
 names:
   0: npc_dianxiaoer                # 店小二
   1: npc_jiudian_laoban            # 酒店老闆
-  2: role_status                   # 人物和寵物狀態
+  2: user_info                   # 人物
+  3: icon_system
+  4: icon_attack
+  5: icon_give
+  6: icon_action
+  7: icon_bangpai
+  8: icon_huijuan
+  9: icon_chengjiu
+  10: icon_zudui
+  11: icon_fashu
+  12: icon_daoju
+  13: icon_haoyou
+  14: close_bb
+  15: open_left_menu
+  16: close_left_menu
+  17: open_right_menu
+  18: close_right_menu
+  19: open_window_info
+  20: location_info
+  21: icon_pet
+  22: chat_down
+  23: icon_fuben
+  24: chat_up
+  25: chuansong
+  26: open_bb
+
+
+
 
 
 #  xanylabeling  標註用這個
 
 
-
-#info_user
-#info_pet
-#b_system
-#b_attack
-#b_give
-#b_property
-#b_colose_menu
-#b_magic
-#b_team
-#b_open
-#npc_dianxiaoer
-#npc_jiudian_laoban
-#npc_datu_zeiwang
-#npc_datu_qiangdao
-#map_changan
-#map_jianye
-#map_nverchun
-#map_aolaiguo
-#w_q_hong
-#w_q_huang
-#w_q_zi
-#w_q_bai
-#w_q_huang
-#w_q_

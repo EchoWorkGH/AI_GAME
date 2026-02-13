@@ -1,7 +1,8 @@
 import os
 
 # 1. 设置路径
-label_path = r'D:\djj\train_s\002HPtest\val\labels' # 你的标签文件夹
+# label_path = r'D:\djj\train_s\002HPtest\val\labels' # 你的标签文件夹
+label_path = r'D:\djj\train_s\002HPtest\train\labels' # 你的标签文件夹
 nc_limit = 25 # 你的 yaml 中 nc 的值
 
 def check_labels(path, limit):

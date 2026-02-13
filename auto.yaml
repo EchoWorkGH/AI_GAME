@@ -1,0 +1,36 @@
+type: yolo26
+name: olo26s-r20230520
+provider: Ultralytics
+display_name: yolo26s1
+model_path: D:/djj/train_s/save/001yolo26s.onnx
+iou_threshold: 0.60
+conf_threshold: 0.25
+agnostic: True
+classes:
+  - npc_dianxiaoer
+  - npc_jiudian_laoban
+  - user_info
+  - icon_system
+  - icon_attack
+  - icon_give
+  - icon_action
+  - icon_bangpai
+  - icon_huijuan
+  - icon_chengjiu
+  - icon_zudui
+  - icon_fashu
+  - icon_daoju
+  - icon_haoyou
+  - close_bb
+  - open_window_info
+  - location_info
+  - icon_pet
+  - chat_down
+  - icon_fuben
+  - chat_up
+  - chuansong
+  - open_bb
+  - arrow_left
+  - arrow_right
+
+

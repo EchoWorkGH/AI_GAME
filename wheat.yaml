@@ -4,9 +4,9 @@ train:
 val:
   - 002HPtest\val\images
 names:
-  0: npc_dianxiaoer                # 店小二
-  1: npc_jiudian_laoban            # 酒店老闆
-  2: user_info                   # 人物
+  0: npc_dianxiaoer
+  1: npc_jiudian_laoban
+  2: user_info
   3: icon_system
   4: icon_attack
   5: icon_give
@@ -29,6 +29,6 @@ names:
   22: open_bb
   23: arrow_left
   24: arrow_right
-#  xanylabeling  標註用這個
+
 
 

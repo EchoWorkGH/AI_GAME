@@ -4,7 +4,7 @@ from ultralytics import YOLO
 model = YOLO(r"D:\djj\gamecv\runs\detect\train3\weights\best.pt")
 
 # 2. 对单张图片进行预测
-results = model.predict(source=r"D:\djj\train_s\testout", save=True, conf=0.5)
+results = model.predict(source=r"D:\djj\train_s\260212", save=True, conf=0.5)
 
 # 3. 打印结果
 for result in results:

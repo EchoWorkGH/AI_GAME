@@ -1,0 +1,31 @@
+path: D:/djj/gamecv/datasets
+train: images/train
+val: images/val
+test: ''
+nc: 25
+names:
+  0: npc_dianxiaoer
+  1: npc_jiudian_laoban
+  2: user_info
+  3: icon_system
+  4: icon_attack
+  5: icon_give
+  6: icon_action
+  7: icon_bangpai
+  8: icon_huijuan
+  9: icon_chengjiu
+  10: icon_zudui
+  11: icon_fashu
+  12: icon_daoju
+  13: icon_haoyou
+  14: close_bb
+  15: open_window_info
+  16: location_info
+  17: icon_pet
+  18: chat_down
+  19: icon_fuben
+  20: chat_up
+  21: chuansong
+  22: open_bb
+  23: arrow_left
+  24: arrow_right
